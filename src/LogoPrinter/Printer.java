@@ -11,17 +11,25 @@ public class Printer {
 	static final int LEFT = 1;
 	static final int RIGHT = 2;
 
-	static int leftBorder = 0;
-	static int rightBorder = 50;
+	int leftBorder;
+	int rightBorder;
 	
-	static boolean penStatus = UP;
-	static int penPosition = 0;
+	boolean penStatus;
+	int penPosition;
 	
 	static RegulatedMotor pen = new EV3MediumRegulatedMotor(MotorPort.A);
 	static RegulatedMotor lifter = new EV3LargeRegulatedMotor(MotorPort.B);
 	static RegulatedMotor rollers = new EV3LargeRegulatedMotor(MotorPort.C);
 	
-	private static int LiftPen(boolean UPDOWN)
+	public Printer(int leftBorder, int rightBorder, boolean penStatus, int penPosition)
+	{
+		this.leftBorder = leftBorder;
+		this.rightBorder = rightBorder;
+		this.penStatus = penStatus;
+		this.penPosition = penPosition;
+	}
+
+	public int LiftPen(boolean UPDOWN)
 	{
 		int returnVal = 1;
 		
@@ -48,7 +56,7 @@ public class Printer {
 		return returnVal;
 	}
 	
-	private static int MovePen(int distance, int direction)
+	public int MovePen(int distance, int direction)
 	{
 		int returnVal = 1;
 		
@@ -56,27 +64,18 @@ public class Printer {
 		{
 			if ((penPosition - distance) >= leftBorder)
 			{
-				// Move pen
+				// Move pen left
 			}
 		}
 		else if (direction == RIGHT)
 		{
 			if ((penPosition + distance) <= rightBorder)
 			{
-				// Move pen
+				// Move pen right
 			}
 		}
 
 		return returnVal;
-	}
-		
-	public static void main(String [ ] args)
-	{
-		if (LiftPen(UP) == 0) System.out.println("Pen moved UP");
-		if (LiftPen(DOWN) == 0) System.out.println("Pen moved DOWN");
-		if (LiftPen(UP) == 0) System.out.println("Pen moved UP");
-		
-		if (MovePen(20, LEFT) == 0) System.out.println("Pen moved 20 left");
 	}
 	
 }

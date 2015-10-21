@@ -54,7 +54,6 @@ public class Printer {
 			double temp2 = Math.pow(((r * Math.sin(largeAngle)) - 1),2);
 			double temp3 = Math.sqrt(25-temp2);
 			positionTable[smallAngle] = temp1 + temp3;
-//			System.out.println(Integer.toString(smallAngle) + " : " + Double.toString(positionTable[smallAngle]));
 		}
 	}
 	
@@ -90,8 +89,7 @@ public class Printer {
 	 */
 	public Printer(double bottomBorder, double topBorder, boolean penStatus, double penPosition)
 	{
-//		System.out.println("Initializing printer");
-//		System.out.println("--------------------");
+		//TODO Add speed setting for motors
 		if (bottomBorder >= MAX_BOTTOM)
 		{
 			this.bottomBorder = bottomBorder;
@@ -100,7 +98,6 @@ public class Printer {
 		{
 			this.bottomBorder = MAX_BOTTOM;
 		}
-//		System.out.println("Left Border set to "+Double.toString(this.bottomBorder));
 		
 		if (topBorder <= MAX_TOP)
 		{
@@ -110,16 +107,12 @@ public class Printer {
 		{
 			this.topBorder = MAX_TOP;
 		}
-//		System.out.println("Right Border set to " + Double.toString(this.topBorder));
 
 		this.penStatus = penStatus;
 		this.penPosition = penPosition;
-//		System.out.println("Pen Position set to " + Double.toString(this.penPosition));
 		this.BuildPenPositionLookupTable();
 		this.penAngle = this.FindAngleFromTable(penPosition);
 		this.rollerPosition = 0.0;
-//		System.out.println("Pen Angle set to " + Integer.toString(this.penAngle));
-//		System.out.println("--------------------");
 	}
 
 	public int LiftPen(boolean UPDOWN)
@@ -187,8 +180,6 @@ public class Printer {
 	{
 		int returnVal = 1;
 		
-//		System.out.println("Moving pen");
-//		System.out.println("--------------------");
 		if (direction == DIR_DOWN)
 		{
 			if (penPosition >= bottomBorder)
@@ -197,9 +188,6 @@ public class Printer {
 				int targetAngle = this.FindAngleFromTable(penPosition - MAX_BOTTOM);
 				if (targetAngle != (MAX_ANGLE+1))
 				{
-//					System.out.println("Moving left");
-//					System.out.println("Target Angle " + Integer.toString(targetAngle));
-//					System.out.println("Rotation Angle " + Integer.toString(-(penAngle - targetAngle)));
 					pen.rotateTo(-1 * (penAngle - targetAngle));
 					penPosition = MAX_BOTTOM;
 					penAngle = targetAngle;
@@ -215,9 +203,6 @@ public class Printer {
 				int targetAngle = this.FindAngleFromTable(MAX_TOP - penPosition);
 				if (targetAngle != (MAX_ANGLE + 1))
 				{
-//					System.out.println("Moving right");
-//					System.out.println("Target Angle " + Integer.toString(targetAngle));
-//					System.out.println("Rotation Angle " + Integer.toString(targetAngle - penAngle));
 					pen.rotateTo(targetAngle - penAngle);
 					penPosition = MAX_TOP;
 					penAngle = targetAngle;
@@ -225,25 +210,23 @@ public class Printer {
 				}
 			}
 		}
-//		System.out.println("--------------------");
 
 		return returnVal;
 	}
 	
 	public int MoveRollers(double distance, int direction)
 	{
+		//TODO Add different relative positions for rollers (current cell, start of line, etc)
+		//TODO Adjust movement for diameter of rollers, not just gears
+		//TODO Add ability to move in multiples of current lookup table (ie, move more than 6.0 left or right)
 		int returnVal = 1;
 		
-//		System.out.println("Moving rollers");
-//		System.out.println("--------------------");
 		if (direction == DIR_LEFT)
 		{
 			// Move paper forward
 			int targetAngle = this.FindAngleFromTable(distance);
 			if (targetAngle != (MAX_ANGLE + 1))
 			{
-//				System.out.println("Moving forward");
-//				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
 				rollers.rotate(-targetAngle);
 				rollerPosition -= distance;
 				returnVal = 0;
@@ -255,15 +238,12 @@ public class Printer {
 			int targetAngle = this.FindAngleFromTable(distance);
 			if (targetAngle != (MAX_ANGLE + 1))
 			{
-//				System.out.println("Moving right");
-//				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
 				rollers.rotate(targetAngle);
 				rollerPosition += distance;
 				returnVal = 0;
 			}
 		}
 
-//		System.out.println("--------------------");
 		return returnVal;
 	}
 	
@@ -296,7 +276,8 @@ public class Printer {
 				targetPen = (penPosition - posPen);
 			}
 		}
-
+		
+		//TODO Determine best relative position for rollers to work from (see MoveRollers)
 		if (relRoller || (posRoller < 0.0))
 		{
 			if (posRoller < 0.0)
@@ -319,12 +300,15 @@ public class Printer {
 			}
 		}
 		
+		//TODO Enable synchronised movement of pen and rollers
 		returnVal = this.MoveRollers(targetRollers, dirRollers);
 		if (returnVal == 0)
 			returnVal = this.MovePen(targetPen, dirPen);
 	
 		return returnVal;
 	}
+	
+	//TODO Find most intuitive way to instruct pen movement (relative pen, absolute roller?)
 	
 	public int PlacePenRel(double penPos, double rollerPos)
 	{

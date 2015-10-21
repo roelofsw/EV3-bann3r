@@ -1,36 +1,45 @@
 package LogoPrinter;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.motor.EV3MediumRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.robotics.RegulatedMotor;
 
 public class Printer {
-	static final boolean UP = true;
-	static final boolean DOWN = false;
+	// Direction and position constants
+	static final boolean PEN_UP = true;
+	static final boolean PEN_DOWN = false;
 	static final int DIR_LEFT = 1;
 	static final int DIR_RIGHT = 2;
 	static final int DIR_FORWARD = 3;
 	static final int DIR_REVERSE = 4;
+	
+	// Maximum movement constants
 	static final double MAX_LEFT = 0.0;
-	static final double MAX_RIGHT = 6.0;
+	static final double MAX_RIGHT = 5.0;
 	static final int MAX_ANGLE = 477;
 
+	// Instance position variables
 	private double leftBorder;
 	private double rightBorder;
 	
 	private boolean penStatus;
 	private double penPosition;
 	private int penAngle;
+	
+	// Lookup table for pen position
 	private double[] positionTable = new double[MAX_ANGLE];
 	
+	// EV3 motor instances
 	static RegulatedMotor pen = new EV3MediumRegulatedMotor(MotorPort.A);
 	static RegulatedMotor lifter = new EV3LargeRegulatedMotor(MotorPort.B);
 	static RegulatedMotor rollers = new EV3LargeRegulatedMotor(MotorPort.C);
 	
+	/**
+	 * Build a lookup table for pen position indexed to motor angle
+	 * @param None
+	 * @return None
+	 */
 	private void BuildPenPositionLookupTable()
 	{
 		int smallAngle;
@@ -48,12 +57,17 @@ public class Printer {
 		}
 	}
 	
+	/**
+	 * Search for target angle associated with an absolute pen position
+	 * @param penPosition Desired absolute pen position
+	 * @return MAX_ANGLE+1 for an error, else lookup table index (angle)
+	 */
 	private int FindAngleFromTable(double penPosition)
 	{
 		int loop;
 		int returnVal = MAX_ANGLE + 1;
 		
-		if ((penPosition >= this.MAX_LEFT) && (penPosition <= this.MAX_RIGHT))
+		if ((penPosition >= MAX_LEFT) && (penPosition <= MAX_RIGHT))
 		{
 			for (loop = 0; loop < MAX_ANGLE; loop++)
 			{
@@ -66,8 +80,17 @@ public class Printer {
 		return returnVal;
 	}
 	
+	/**
+	 * Printer instance constructor
+	 * @param leftBorder 
+	 * @param rightBorder
+	 * @param penStatus
+	 * @param penPosition
+	 */
 	public Printer(double leftBorder, double rightBorder, boolean penStatus, double penPosition)
 	{
+		System.out.println("Initializing printer");
+		System.out.println("--------------------");
 		if (leftBorder >= MAX_LEFT)
 		{
 			this.leftBorder = leftBorder;
@@ -94,36 +117,37 @@ public class Printer {
 		this.BuildPenPositionLookupTable();
 		this.penAngle = this.FindAngleFromTable(penPosition);
 		System.out.println("Pen Angle set to " + Integer.toString(this.penAngle));
+		System.out.println("--------------------");
 	}
 
 	public int LiftPen(boolean UPDOWN)
 	{
 		int returnVal = 1;
 		
-		if (UPDOWN == UP)
+		if (UPDOWN == PEN_UP)
 		{
-			if (penStatus == DOWN)
+			if (penStatus == PEN_DOWN)
 			{
 				// Move pen up
 				lifter.rotate(180);
-				penStatus = UP;
+				penStatus = PEN_UP;
 			}
 			returnVal = 0;
 		}
-		else if (UPDOWN == DOWN)
+		else if (UPDOWN == PEN_DOWN)
 		{
-			if (penStatus == UP)
+			if (penStatus == PEN_UP)
 			{
 				// Move pen down
 				lifter.rotate(180);
-				penStatus = DOWN;
+				penStatus = PEN_DOWN;
 			}
 			returnVal = 0;
 		}
 		return returnVal;
 	}
 	
-	public int MovePen(int distance, int direction)
+	public int MovePen(double distance, int direction)
 	{
 		int returnVal = 1;
 		
@@ -133,8 +157,11 @@ public class Printer {
 			{
 				// Move pen left
 				int targetAngle = this.FindAngleFromTable(penPosition - distance);
-				pen.rotateTo(penAngle - targetAngle);
-				returnVal = 0;
+				if (targetAngle != (MAX_ANGLE + 1))
+				{
+					pen.rotateTo(-1 * (penAngle - targetAngle));
+					returnVal = 0;
+				}
 			}
 		}
 		else if (direction == DIR_RIGHT)
@@ -143,8 +170,11 @@ public class Printer {
 			{
 				// Move pen right
 				int targetAngle = this.FindAngleFromTable(penPosition + distance);
-				pen.rotateTo(targetAngle - penAngle);
-				returnVal = 0;
+				if (targetAngle != (MAX_ANGLE + 1))
+				{
+					pen.rotateTo(targetAngle - penAngle);
+					returnVal = 0;
+				}
 			}
 		}
 
@@ -155,17 +185,24 @@ public class Printer {
 	{
 		int returnVal = 1;
 		
+		System.out.println("Moving pen");
+		System.out.println("--------------------");
 		if (direction == DIR_LEFT)
 		{
 			if (penPosition >= leftBorder)
 			{
 				// Move pen left
 				int targetAngle = this.FindAngleFromTable(penPosition - MAX_LEFT);
-				System.out.println("Moving left");
-				System.out.println("Target Angle " + Integer.toString(targetAngle));
-				System.out.println("Rotation Angle " + Integer.toString(-(penAngle - targetAngle)));
-				pen.rotate(-1 * (penAngle - targetAngle));
-				returnVal = 0;
+				if (targetAngle != (MAX_ANGLE+1))
+				{
+					System.out.println("Moving left");
+					System.out.println("Target Angle " + Integer.toString(targetAngle));
+					System.out.println("Rotation Angle " + Integer.toString(-(penAngle - targetAngle)));
+					pen.rotateTo(-1 * (penAngle - targetAngle));
+					penPosition = MAX_LEFT;
+					penAngle = targetAngle;
+					returnVal = 0;
+				}
 			}
 		}
 		else if (direction == DIR_RIGHT)
@@ -173,14 +210,20 @@ public class Printer {
 			if (penPosition <= rightBorder)
 			{
 				// Move pen right
-				int targetAngle = this.FindAngleFromTable(penPosition + MAX_RIGHT);
-				System.out.println("Moving right");
-				System.out.println("Target Angle " + Integer.toString(targetAngle));
-				System.out.println("Rotation Angle " + Integer.toString(targetAngle - penAngle));
-				pen.rotate(targetAngle - penAngle);
-				returnVal = 0;
+				int targetAngle = this.FindAngleFromTable(MAX_RIGHT - penPosition);
+				if (targetAngle != (MAX_ANGLE + 1))
+				{
+					System.out.println("Moving right");
+					System.out.println("Target Angle " + Integer.toString(targetAngle));
+					System.out.println("Rotation Angle " + Integer.toString(targetAngle - penAngle));
+					pen.rotateTo(targetAngle - penAngle);
+					penPosition = MAX_RIGHT;
+					penAngle = targetAngle;
+					returnVal = 0;
+				}
 			}
 		}
+		System.out.println("--------------------");
 
 		return returnVal;
 	}
@@ -189,25 +232,34 @@ public class Printer {
 	{
 		int returnVal = 1;
 		
+		System.out.println("Moving rollers");
+		System.out.println("--------------------");
 		if (direction == DIR_FORWARD)
 		{
 			// Move paper forward
 			int targetAngle = this.FindAngleFromTable(distance);
-			System.out.println("Moving forward");
-			System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
-			rollers.rotate(-targetAngle);
-			returnVal = 0;
+			if (targetAngle != (MAX_ANGLE + 1))
+			{
+				System.out.println("Moving forward");
+				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
+				rollers.rotate(-targetAngle);
+				returnVal = 0;
+			}
 		}
 		else if (direction == DIR_REVERSE)
 		{
 			// Move paper backward
 			int targetAngle = this.FindAngleFromTable(distance);
-			System.out.println("Moving right");
-			System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
-			rollers.rotate(targetAngle);
-			returnVal = 0;
+			if (targetAngle != (MAX_ANGLE + 1))
+			{
+				System.out.println("Moving right");
+				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
+				rollers.rotate(targetAngle);
+				returnVal = 0;
+			}
 		}
 
+		System.out.println("--------------------");
 		return returnVal;
 	}
 	

@@ -244,7 +244,7 @@ public class Printer {
 			{
 //				System.out.println("Moving forward");
 //				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
-				rollers.rotate(-targetAngle, true);
+				rollers.rotate(-targetAngle);
 				rollerPosition -= distance;
 				returnVal = 0;
 			}
@@ -257,7 +257,7 @@ public class Printer {
 			{
 //				System.out.println("Moving right");
 //				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
-				rollers.rotate(targetAngle, true);
+				rollers.rotate(targetAngle);
 				rollerPosition += distance;
 				returnVal = 0;
 			}

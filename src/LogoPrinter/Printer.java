@@ -26,6 +26,7 @@ public class Printer {
 	private boolean penStatus;
 	private double penPosition;
 	private int penAngle;
+	private double rollerPosition;
 	
 	// Lookup table for pen position
 	private double[] positionTable = new double[MAX_ANGLE];
@@ -116,6 +117,7 @@ public class Printer {
 //		System.out.println("Pen Position set to " + Double.toString(this.penPosition));
 		this.BuildPenPositionLookupTable();
 		this.penAngle = this.FindAngleFromTable(penPosition);
+		this.rollerPosition = 0.0;
 //		System.out.println("Pen Angle set to " + Integer.toString(this.penAngle));
 //		System.out.println("--------------------");
 	}
@@ -242,7 +244,8 @@ public class Printer {
 			{
 //				System.out.println("Moving forward");
 //				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
-				rollers.rotate(-targetAngle);
+				rollers.rotate(-targetAngle, true);
+				rollerPosition -= distance;
 				returnVal = 0;
 			}
 		}
@@ -254,13 +257,83 @@ public class Printer {
 			{
 //				System.out.println("Moving right");
 //				System.out.println("Target/Rotation Angle " + Integer.toString(targetAngle));
-				rollers.rotate(targetAngle);
+				rollers.rotate(targetAngle, true);
+				rollerPosition += distance;
 				returnVal = 0;
 			}
 		}
 
 //		System.out.println("--------------------");
 		return returnVal;
+	}
+	
+	public int PlacePen(double posPen, double posRoller, boolean relPen, boolean relRoller)
+	{
+		int returnVal = 1;
+		double targetPen;
+		double targetRollers;
+		int dirPen;
+		int dirRollers;
+		
+		if (relPen || (posPen < 0.0))
+		{
+			if (posPen < 0.0)
+				dirPen = DIR_DOWN;
+			else
+				dirPen = DIR_UP;
+			targetPen = Math.abs(posPen);
+		}
+		else
+		{
+			if ((posPen - penPosition) > 0.0)
+			{
+				dirPen = DIR_UP;
+				targetPen = (posPen - penPosition);
+			}
+			else
+			{
+				dirPen = DIR_DOWN;
+				targetPen = (penPosition - posPen);
+			}
+		}
+
+		if (relRoller || (posRoller < 0.0))
+		{
+			if (posRoller < 0.0)
+				dirRollers = DIR_LEFT;
+			else
+				dirRollers = DIR_RIGHT;
+			targetRollers = Math.abs(posRoller);
+		}
+		else
+		{
+			if ((posRoller - rollerPosition) > 0.0)
+			{
+				dirRollers = DIR_RIGHT;
+				targetRollers = (posRoller - rollerPosition);
+			}
+			else
+			{
+				dirRollers = DIR_LEFT;
+				targetRollers = (rollerPosition - posRoller);
+			}
+		}
+		
+		returnVal = this.MoveRollers(targetRollers, dirRollers);
+		if (returnVal == 0)
+			returnVal = this.MovePen(targetPen, dirPen);
+	
+		return returnVal;
+	}
+	
+	public int PlacePenRel(double penPos, double rollerPos)
+	{
+		return (PlacePen(penPos, rollerPos, true, true));
+	}
+	
+	public int PlacePenAbs(double penPos, double rollerPos)
+	{
+		return (PlacePen(penPos, rollerPos, false, false));
 	}
 	
 }

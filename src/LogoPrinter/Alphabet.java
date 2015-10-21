@@ -5,6 +5,18 @@ import LogoPrinter.Printer;
 public class Alphabet {
 	static Printer p = new Printer(0.0, 5.5, Printer.PEN_UP, 0.0);
 	
+	public static int drawLine(double startX, double startY, double endX, double endY)
+	{
+		int returnVal = 0;
+		
+		p.LiftPen(Printer.PEN_UP);
+		p.PlacePenAbs(startY, startX);
+		p.LiftPen(Printer.PEN_DOWN);
+		p.PlacePenAbs(endY, endX);
+		
+		return returnVal;
+	}
+	
 	public static void drawRect()
 	{
 		p.LiftPen(Printer.PEN_DOWN);
@@ -17,6 +29,9 @@ public class Alphabet {
 	
 	public static void main(String [ ] args)
 	{
-		drawRect();
+		drawLine(0.0, 2.0, 5.0, 5.0);
+//		drawRect();
+		p.LiftPen(Printer.PEN_UP);
+		p.MovePen(Printer.DIR_DOWN);
 	}
 }
